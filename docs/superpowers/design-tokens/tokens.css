@@ -1,0 +1,141 @@
+/*
+ * Gymify AI — Design Tokens (CSS custom properties)
+ *
+ * Single source of truth for visual design tokens.
+ * Mirrors the Tailwind preset in `tailwind.preset.ts`.
+ * Spec: ../specs/2026-05-19-gymify-ai-ui-design.md
+ */
+
+:root {
+  /* ---------------- Color ---------------- */
+
+  /* Background layers */
+  --color-bg-base:        #0F1115;
+  --color-bg-elevated:    #1A1D24;
+  --color-bg-raised:      #2A2D35;
+
+  /* Borders */
+  --color-border-subtle:  #2A2D35;
+
+  /* Accent (orange) */
+  --color-accent-400:     #FF8559;
+  --color-accent-500:     #FF6B35;
+  --color-accent-tint:    rgba(255, 107, 53, 0.10);
+  --color-accent-ring:    rgba(255, 107, 53, 0.25);
+  --color-accent-shadow:  rgba(255, 107, 53, 0.28);
+
+  /* Text */
+  --color-text-primary:   #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+  --color-text-tertiary:  #6B7280;
+  --color-text-disabled:  #4A4D55;
+  --color-text-on-accent: #0F1115;
+
+  /* Semantic */
+  --color-danger:         #EF4444;
+
+  /* ---------------- Gradients ---------------- */
+  --gradient-accent:      linear-gradient(135deg, #FF8559 0%, #FF6B35 100%);
+  --gradient-bar:         linear-gradient(180deg, rgba(255,107,53,0.6), rgba(255,107,53,0.15));
+  --gradient-fill:        linear-gradient(90deg, #FF8559, #FF6B35);
+
+  /* ---------------- Shadows ---------------- */
+  --shadow-cta:           0 8px 24px rgba(255, 107, 53, 0.28);
+  --shadow-cta-strong:    0 8px 24px rgba(255, 107, 53, 0.32);
+  --shadow-icon:          0 10px 24px rgba(255, 107, 53, 0.45);
+  --shadow-card:          0 16px 48px rgba(0, 0, 0, 0.50);
+  --ring-accent:          0 0 0 4px rgba(255, 107, 53, 0.10);
+
+  /* ---------------- Typography ---------------- */
+  --font-family-sans:     'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Sizes */
+  --font-size-display:    26px;  /* hero / wizard step title  */
+  --font-size-title-l:    22px;  /* section hero / big stat   */
+  --font-size-title-m:    20px;  /* exercise name             */
+  --font-size-title-s:    17px;  /* profile name              */
+  --font-size-body-m:     15px;  /* CTA, primary body         */
+  --font-size-body-s:     14px;  /* card title, set cell      */
+  --font-size-body-xs:    13px;  /* subtitle, secondary       */
+  --font-size-caption:    12px;  /* meta                      */
+  --font-size-label:      11px;  /* section label UPPERCASE   */
+  --font-size-micro:      10px;  /* step / header UPPERCASE   */
+  --font-size-nano:       9px;   /* dense table headers       */
+
+  /* Weights */
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-weight-black:    800;
+
+  /* Letter-spacing */
+  --letter-display:       -0.6px;
+  --letter-title-l:       -0.5px;
+  --letter-title-m:       -0.5px;
+  --letter-title-s:       -0.4px;
+  --letter-body:          -0.3px;
+  --letter-label:         1.3px;   /* UPPERCASE labels */
+  --letter-micro:         1.4px;   /* UPPERCASE micro labels */
+
+  /* Line-height */
+  --leading-tight:        1.15;
+  --leading-snug:         1.25;
+  --leading-normal:       1.5;
+
+  /* ---------------- Spacing ---------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ---------------- Radii ---------------- */
+  --radius-xs:    8px;   /* inner tiles               */
+  --radius-sm:    10px;  /* small buttons, ghost ctrl */
+  --radius-md:    14px;  /* outline buttons           */
+  --radius-lg:    16px;  /* default buttons / cards   */
+  --radius-xl:    18px;  /* primary CTA / cards lg    */
+  --radius-2xl:   22px;  /* hero surfaces             */
+  --radius-3xl:   24px;  /* big surfaces / nav        */
+  --radius-pill:  999px; /* chip pills                */
+
+  /* ---------------- Sizing ---------------- */
+  --touch-target-min:     44px;
+  --icon-tile-sm:         24px;
+  --icon-tile-md:         32px;
+  --icon-tile-lg:         40px;
+  --icon-tile-xl:         48px;
+  --avatar-md:            46px;
+
+  /* ---------------- Motion ---------------- */
+  --transition-fast:      120ms ease;
+  --transition-base:      200ms ease;
+  --transition-slow:      400ms ease;
+  --easing-pulse:         ease-in-out;
+  --duration-pulse:       3s;
+
+  /* ---------------- Z-index ---------------- */
+  --z-sticky:    10;
+  --z-overlay:   20;
+  --z-modal:     30;
+  --z-toast:     40;
+}
+
+/*
+ * The current design is dark-first. Light theme is deferred (see UI spec §9).
+ * When light theme is added, override these tokens inside a `[data-theme="light"]` selector
+ * or `@media (prefers-color-scheme: light)`.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
+    --duration-pulse:  0s;
+  }
+}
