@@ -72,21 +72,47 @@ All tables include `createdAt` and `updatedAt`. User-deletable entities include 
 ### User
 ```
 id              UUID, primary key
-email           string, unique (indexed)
-passwordHash    string
-emailVerifiedAt datetime (nullable)
+email           string, unique (indexed)   ← metadata only; never verified, no emails sent
+isPremium       boolean (default false)    ← set to true after successful (fake) payment
+plansGenerated  integer (default 0)        ← lifetime counter; gate at 2 for free tier
 createdAt, updatedAt, deletedAt
 ```
+> **Auth model change (vs. original spec):** There is no password, no email verification, and no traditional login. Accounts are created silently the first time a user submits their email during the plan-generation flow. Returning users are re-identified via `DeviceFingerprint` (see below); email is a human-readable label in our system, not a credential.
+
+### DeviceFingerprint
+Ties a browser session to a `User`. Multiple fingerprints may point to the same user (e.g. different devices). Created on first visit; looked up on every subsequent visit to find the existing account.
+```
+id             UUID, primary key
+userId         FK → User (indexed)
+token          string, unique             ← random UUID written to localStorage on first visit
+ipAddress      string (IPv4/IPv6)
+userAgent      string
+extraMeta      JSONB (nullable)           ← screen resolution, timezone, language, etc.
+lastSeenAt     datetime
+createdAt
+```
+Index: `token` (unique). At account creation the backend hashes `(token + IP + userAgent)` for cross-reference, but `token` alone is the primary lookup key because IP changes.
+
+### PaymentRecord
+Stores the card metadata submitted through the (currently fake) payment modal. No real charge is ever made; any card passing basic format validation is accepted.
+```
+id            UUID, primary key
+userId        FK → User (indexed)
+cardLastFour  string(4)
+cardExpiry    string(5)  ← "MM/YY"
+cardHolder    string
+createdAt
+```
+> **Fake payment note:** the backend validates format only (Luhn check on the full card number client-side before submission; only `lastFour` stored). On success `User.isPremium` is set to `true` and unlimited plan generation is unlocked.
 
 ### AuthToken
-Refresh token registry — enables rotation + revocation.
+Refresh token registry — enables rotation + revocation. (Retained from original spec; password/login-reuse detection chain removed since there are no passwords.)
 ```
 id            UUID, primary key
 userId        FK → User (indexed)
 tokenHash     string (sha256 of refresh token)
 expiresAt     datetime
 revokedAt     datetime (nullable)
-replacedById  FK → AuthToken (nullable; rotation chain)
 userAgent     string (nullable)
 ```
 
@@ -303,15 +329,27 @@ All state-changing endpoints require a CSRF token (double-submit cookie pattern)
 All list endpoints support cursor pagination: `?cursor=<id>&limit=<n>`.
 All write endpoints return the consistent error envelope (§7).
 
-### Auth
+### Auth / Identity
 ```
-POST /api/auth/register             — create account; sends verification email
-POST /api/auth/verify-email         — confirm email with token
-POST /api/auth/login                — access token + refresh cookie; rate-limited (5/15min per IP+email)
-POST /api/auth/logout               — clear refresh cookie + revoke token
-POST /api/auth/refresh              — rotate refresh, issue new access token
-POST /api/auth/forgot-password      — send reset email
-POST /api/auth/reset-password       — apply reset with token
+POST /api/auth/identify             — silent account resolution:
+                                      body: { email, fingerprintToken }
+                                      1. Look up DeviceFingerprint by token.
+                                      2. If found → return the linked User (with JWT).
+                                      3. If not found → look up User by email.
+                                         a. If email exists → link this fingerprint to it.
+                                         b. If neither exists → create User + DeviceFingerprint.
+                                      Returns: { userId, isPremium, plansGenerated, accessToken }
+POST /api/auth/refresh              — rotate refresh token, issue new access token
+POST /api/auth/logout               — clear refresh cookie
+```
+> All other original auth endpoints (register, verify-email, login, forgot-password, reset-password) are **removed** — there are no passwords in this model.
+
+### Payment (fake)
+```
+POST /api/payment/submit            — body: { cardNumber, expiry, holder, cvv }
+                                      Validates format (Luhn + regex) server-side.
+                                      On success: sets User.isPremium = true, creates PaymentRecord.
+                                      Returns: { success: true, isPremium: true }
 ```
 
 ### Profile
@@ -404,9 +442,7 @@ GET /api/health                     — liveness + DB ping + AI budget headroom
 
 ### User Flow
 ```
-Register → Email verification → Login
-      ↓
-Onboarding Wizard (new users only) — 6 steps:
+Landing / Onboarding Wizard (no login required) — 6 steps:
   Step 1: Goal (4 options) — emotional hook first
   Step 2: Basic data (sex, weight, height, age, unit preference)
   Step 3: Availability (days/week, session minutes, training years, fitness self-rating)
@@ -414,12 +450,34 @@ Onboarding Wizard (new users only) — 6 steps:
   Step 5: Health (PARQ checklist, structured injuries, medical disclaimer)
   Step 6: Strength benchmarks (optional — "skip if unknown"; brief quiz to estimate)
       ↓
+Email collection modal ("Enter your email to generate your personalised plan")
+  → POST /api/auth/identify  (silent account creation / resolution)
+  → JWT stored in memory; fingerprintToken persisted in localStorage
+      ↓
+Quota check (server-side, also reflected in JWT payload):
+  • plansGenerated < 2  →  proceed to generation
+  • plansGenerated ≥ 2 AND isPremium = false  →  Payment modal (see below)
+  • isPremium = true  →  proceed to generation (unlimited)
+      ↓
 Plan generation loading screen (async; SSE-driven progress with named phases)
       ↓
 Dashboard
 ```
 
 The wizard supports back navigation on every step, persists progress in `localStorage` (so it survives reload), and validates step by step.
+
+**Fingerprint persistence (client-side):**
+- On first page load, generate a UUID v4 and store it as `gymify_fp` in `localStorage`.
+- Read this token on every subsequent visit and send it with `/api/auth/identify`.
+- If `localStorage` is cleared the fingerprint is lost; the backend will fall back to email lookup and issue a new fingerprint token.
+
+**Payment modal (fake):**
+- Triggered when `plansGenerated >= 2 && !isPremium`.
+- Collects: card number (16 digits), expiry (MM/YY), cardholder name, CVV (3–4 digits).
+- Client-side Luhn check on card number before submission; expiry must be a future date; CVV 3–4 digits.
+- Any card passing these format checks is accepted (`POST /api/payment/submit`).
+- On success: modal closes, `isPremium` flag updated in app state, plan generation proceeds immediately.
+- No real charge, no external payment processor, no webhook.
 
 ### Views
 
@@ -478,11 +536,17 @@ The wizard supports back navigation on every step, persists progress in `localSt
 ## 7. Security and Error Handling
 
 ### Authentication
-- Passwords hashed with bcrypt (cost factor 12).
-- Access token: JWT, 15-min TTL, in-memory on the frontend.
-- Refresh token: 7-day TTL in httpOnly + Secure + SameSite=Strict cookie. Rotated on every refresh; previous token stored in `AuthToken.replacedById` for reuse detection (any reuse revokes the entire chain).
-- Login rate-limit: 5 failures / 15 min per IP+email.
-- Email verification + password reset flows.
+- **No passwords.** Identity is established by fingerprint token (from `localStorage`) + email.
+- Access token: JWT, 15-min TTL, in-memory on the frontend. Payload includes `{ userId, isPremium, plansGenerated }` so the frontend can enforce the quota gate without an extra request.
+- Refresh token: 7-day TTL in httpOnly + Secure + SameSite=Strict cookie. Rotated on every refresh.
+- `/api/auth/identify` rate-limited: 10 calls / 15 min per IP to prevent account enumeration / mass account creation.
+- `AuthToken` table retained for refresh token registry (rotation + revocation), but `replacedById` chain is simplified — no reuse-detection chain needed since there is no password to steal.
+
+### Fingerprinting & anti-abuse
+- `gymify_fp` UUID generated client-side on first visit, stored in `localStorage`, sent with every `/api/auth/identify` call.
+- The backend indexes `DeviceFingerprint.token` (unique). One fingerprint → one user. If the same email is submitted from a new fingerprint device, the new fingerprint is linked to the existing email account — preventing "new limits" by re-entering the same email from a different browser.
+- `DeviceFingerprint.extraMeta` (screen dimensions, timezone, language) is stored as supplementary signal but is not the primary key — the localStorage token is.
+- **Abuse vector acknowledged:** a determined user can clear `localStorage` and use a fresh email to reset their quota. This is considered acceptable for the MVP freemium model. Stronger fingerprinting (canvas, WebGL, AudioContext hashing) can be added post-MVP if abuse is detected.
 
 ### CSRF
 - Double-submit cookie pattern for state-changing endpoints (CSRF token from a non-httpOnly cookie echoed in a request header).
@@ -503,8 +567,10 @@ The wizard supports back navigation on every step, persists progress in `localSt
 - All unhandled errors → Sentry (backend + worker + frontend).
 
 ### Rate Limiting
-- `/api/plans/generate|regenerate`: 5/h per user (DB-backed counter).
-- `/api/auth/login`: 5/15 min per IP+email.
+- `/api/plans/generate|regenerate`:
+  - **Freemium gate:** 2 lifetime plan generations per user (tracked in `User.plansGenerated`). On the 3rd attempt, the endpoint returns `HTTP 402 Payment Required` with `{ error: { code: "QUOTA_EXCEEDED" } }` — the frontend responds by showing the payment modal.
+  - **Premium users** (`isPremium = true`): unlimited; only the standard 5/h throughput cap applies.
+- `/api/auth/identify`: 10 calls / 15 min per IP.
 - Global daily AI spend cap with circuit-breaker behavior.
 
 ### GDPR / privacy
@@ -542,6 +608,18 @@ These are deferred pending product input; none block scaffolding the codebase, b
 5. **`shared` package distribution:** workspace path (simpler — default) vs. published artifact.
 6. **i18n rollout:** English at MVP, Polish locale planned.
 7. **Auto-rescheduling skipped sessions:** post-MVP.
+
+---
+
+## Appendix B — Freemium & identity model (added 2026-05-25)
+
+Key decisions added in this revision:
+
+- **No traditional registration.** Email is collected silently at the point of plan generation, solely as a human-readable account label. No verification email is ever sent.
+- **Browser fingerprint** (`gymify_fp` UUID in `localStorage` + IP + UA) is the primary identity signal. It prevents users from gaming quotas by re-entering the same email from the same browser.
+- **2 free plan generations** per account (tracked in `User.plansGenerated`). 3rd attempt returns HTTP 402, triggering the payment modal client-side.
+- **Fake payment gate.** Client-side Luhn + format validation only; any conforming card is accepted. `User.isPremium = true` is set server-side; no real payment processor integrated in MVP.
+- `DeviceFingerprint`, `PaymentRecord` tables added; `User` loses `passwordHash` and `emailVerifiedAt`; `AuthToken` rotation chain simplified.
 
 ---
 
