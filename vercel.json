@@ -2,10 +2,9 @@
   "version": 2,
   "installCommand": "npm install",
   "buildCommand": "npm run build -w packages/shared && npm run build -w packages/backend",
-  "outputDirectory": "packages/backend/dist",
   "functions": {
     "packages/backend/src/vercel.ts": {
-      "includeFiles": "packages/shared/dist/**"
+      "includeFiles": "packages/shared/dist/**,packages/backend/node_modules/.prisma/**"
     }
   },
   "routes": [
