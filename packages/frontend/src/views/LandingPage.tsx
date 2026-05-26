@@ -3,13 +3,14 @@
 // ═══════════════════════════════════════════════════════════
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button, Badge } from '../components/ui/primitives';
 import { GymifyLogo, AccentLine } from '../components/layout/Layout';
 
 const STATS = [
-  { value: '4-week', label: 'Mesocycles' },
+  { value: '4-week', label: 'Mesocycles'   },
   { value: 'AI',     label: 'Personalized' },
-  { value: '150+',   label: 'Exercises' },
+  { value: '150+',   label: 'Exercises'    },
 ];
 
 const FEATURES = [
@@ -37,6 +38,7 @@ const FEATURES = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-dvh bg-zinc-950 flex flex-col">
@@ -70,14 +72,14 @@ export default function LandingPage() {
 
         {/* Headline */}
         <div className="mt-16 mb-8 animate-fade-up">
-          <p className="text-label mb-3">AI Personal Trainer</p>
+          <p className="text-label mb-3">{t('landing.subheadline')}</p>
           <h1 className="display-xl text-zinc-100 mb-4">
-            Your plan.<br />
-            <span className="text-gradient-orange">Your pace.</span>
+            {t('landing.headline').split('\n')[0]}<br />
+            <span className="text-gradient-orange">{t('landing.headline').split('\n')[1]}</span>
           </h1>
           <AccentLine />
           <p className="mt-5 text-zinc-400 text-base leading-relaxed max-w-xs">
-            Generate a complete AI-powered mesocycle in under 60 seconds — tailored to your goals, equipment, and fitness level.
+            {t('landing.description')}
           </p>
         </div>
 
@@ -100,10 +102,10 @@ export default function LandingPage() {
             onClick={() => navigate('/onboarding')}
             rightIcon={<ArrowRightIcon />}
           >
-            Build My Program
+            {t('landing.cta')}
           </Button>
           <p className="text-center text-2xs text-zinc-600 uppercase tracking-wider">
-            Free · No account needed · 2 plans free
+            {t('landing.free')}
           </p>
         </div>
       </section>
@@ -141,10 +143,10 @@ export default function LandingPage() {
           className="w-full"
           onClick={() => navigate('/onboarding')}
         >
-          Get Started — It's Free
+          {t('landing.getStarted')}
         </Button>
         <p className="mt-4 text-zinc-600 text-xs">
-          No credit card required for your first 2 plans
+          {t('landing.noCard')}
         </p>
       </section>
 

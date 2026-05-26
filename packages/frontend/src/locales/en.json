@@ -1,0 +1,140 @@
+{
+  "landing": {
+    "headline": "Your plan.\nYour pace.",
+    "subheadline": "AI Personal Trainer",
+    "description": "Generate a complete AI-powered workout plan in under 60 seconds — tailored to your goals, equipment, and fitness level.",
+    "cta": "Build my plan",
+    "free": "Free · No account · 2 plans free",
+    "getStarted": "Get Started — It's Free",
+    "noCard": "No credit card required for your first 2 plans"
+  },
+  "onboarding": {
+    "step": "Step {{current}} of {{total}}",
+    "continue": "Continue",
+    "generate": "Generate my plan →",
+    "skip": "Skip benchmarks",
+    "step1": {
+      "title": "What's your primary goal?",
+      "sub": "We'll tailor the plan to what you want to achieve."
+    },
+    "step2": {
+      "title": "Tell us about yourself",
+      "sub": "This data is used to calibrate your training."
+    },
+    "step3": {
+      "title": "Your schedule",
+      "sub": "We'll fit the program around your life."
+    },
+    "step4": {
+      "title": "Available equipment",
+      "sub": "Only select what you actually have access to."
+    },
+    "step5": {
+      "title": "Health check",
+      "sub": "Your safety is the priority."
+    },
+    "step6": {
+      "title": "Strength benchmarks",
+      "sub": "Optional — helps AI calibrate your starting weights."
+    },
+    "goals": {
+      "LOSE_WEIGHT": "Lose Weight",
+      "BUILD_MUSCLE": "Build Muscle",
+      "IMPROVE_ENDURANCE": "Boost Endurance",
+      "STAY_FIT": "Stay Active"
+    }
+  },
+  "email": {
+    "title": "Last step!",
+    "sub": "Enter your email to save your plan.",
+    "label": "Email address",
+    "placeholder": "your@email.com",
+    "cta": "Generate plan",
+    "note": "We won't send you any messages."
+  },
+  "generating": {
+    "title": "Creating your plan",
+    "sub": "This will take 30–60 seconds",
+    "phases": {
+      "ANALYZING_PROFILE": "Analyzing your profile",
+      "DESIGNING_SCHEDULE": "Designing your schedule",
+      "SELECTING_EXERCISES": "Selecting exercises",
+      "VALIDATING": "Validating",
+      "DONE": "Plan ready!"
+    }
+  },
+  "dashboard": {
+    "greeting": "Hello",
+    "today": "Today's workout",
+    "startWorkout": "Start workout",
+    "thisWeek": "This week",
+    "lastWorkout": "Last workout",
+    "seeAll": "All →",
+    "weekOf": "{{count}} of {{total}}",
+    "noPlan": "No active plan",
+    "generatePlan": "Generate plan",
+    "streak": "Streak",
+    "days": "days"
+  },
+  "nav": {
+    "home": "TODAY",
+    "plan": "PLAN",
+    "history": "HISTORY",
+    "profile": "PROFILE"
+  },
+  "payment": {
+    "title": "Unlock Premium",
+    "sub": "You've generated 2 free plans. Upgrade to Premium for unlimited access.",
+    "cardNumber": "Card number",
+    "expiry": "MM/YY",
+    "holder": "Full name",
+    "cvv": "CVV",
+    "cta": "Pay and continue",
+    "secure": "Secure payment"
+  },
+  "workout": {
+    "exercise": "Exercise {{current}} of {{total}}",
+    "plan": "Plan · {{sets}} × {{reps}} @ RPE {{rpe}}",
+    "rest": "Rest",
+    "skip": "Skip",
+    "repeatLast": "↻ Repeat last",
+    "dropSet": "+ Drop set",
+    "substitute": "⇄ Substitute",
+    "finish": "Finish workout",
+    "complete": "Completed"
+  },
+  "plan": {
+    "title": "Mesocycle",
+    "weeks": "wks.",
+    "deload": "Deload",
+    "regenerate": "↻ Regenerate plan",
+    "rest": "Rest",
+    "day": "Day {{n}}"
+  },
+  "history": {
+    "list": "List",
+    "progress": "Progress",
+    "recentSessions": "Recent sessions",
+    "e1rm": "e1RM",
+    "weeklyVolume": "7d Volume",
+    "sets": "Sets"
+  },
+  "profile": {
+    "trainingData": "Training data",
+    "settings": "Settings",
+    "darkMode": "Dark mode",
+    "units": "Units",
+    "language": "Language",
+    "logout": "Log out",
+    "profile": "Profile",
+    "equipment": "Equipment",
+    "injuries": "Injuries",
+    "benchmarks": "Benchmarks",
+    "metric": "Metric",
+    "imperial": "Imperial"
+  },
+  "errors": {
+    "networkError": "Connection error. Please try again.",
+    "quotaExceeded": "You've used all your free plans."
+  }
+}

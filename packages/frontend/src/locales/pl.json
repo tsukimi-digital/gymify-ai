@@ -1,0 +1,140 @@
+{
+  "landing": {
+    "headline": "Twój plan.\nTwoje tempo.",
+    "subheadline": "AI Personal Trainer",
+    "description": "Wygeneruj kompletny plan treningowy oparty na AI w mniej niż 60 sekund — dopasowany do Twoich celów, sprzętu i poziomu zaawansowania.",
+    "cta": "Zbuduj mój plan",
+    "free": "Bezpłatny · Bez konta · 2 plany za darmo",
+    "getStarted": "Zacznij teraz — To jest bezpłatne",
+    "noCard": "Nie potrzebujesz karty kredytowej dla pierwszych 2 planów"
+  },
+  "onboarding": {
+    "step": "Krok {{current}} z {{total}}",
+    "continue": "Dalej",
+    "generate": "Generuj mój plan →",
+    "skip": "Pomiń benchmarki",
+    "step1": {
+      "title": "Jaki jest Twój główny cel?",
+      "sub": "Dostosujemy plan pod to, co chcesz osiągnąć."
+    },
+    "step2": {
+      "title": "Powiedz nam o sobie",
+      "sub": "Dane te są używane do kalibracji treningu."
+    },
+    "step3": {
+      "title": "Twój harmonogram",
+      "sub": "Dostosujemy program do Twojego życia."
+    },
+    "step4": {
+      "title": "Dostępny sprzęt",
+      "sub": "Zaznacz tylko to, z czego faktycznie korzystasz."
+    },
+    "step5": {
+      "title": "Sprawdzenie stanu zdrowia",
+      "sub": "Twoje bezpieczeństwo jest priorytetem."
+    },
+    "step6": {
+      "title": "Benchmarki siłowe",
+      "sub": "Opcjonalne — pomaga AI skalibrować ciężary startowe."
+    },
+    "goals": {
+      "LOSE_WEIGHT": "Zrzucić wagę",
+      "BUILD_MUSCLE": "Zbudować mięśnie",
+      "IMPROVE_ENDURANCE": "Poprawić wytrzymałość",
+      "STAY_FIT": "Zachować formę"
+    }
+  },
+  "email": {
+    "title": "Ostatni krok!",
+    "sub": "Podaj email, aby zapisać Twój plan.",
+    "label": "Adres email",
+    "placeholder": "twoj@email.com",
+    "cta": "Generuj plan",
+    "note": "Nie wyślemy Ci żadnych wiadomości."
+  },
+  "generating": {
+    "title": "Tworzymy Twój plan",
+    "sub": "To zajmie 30–60 sekund",
+    "phases": {
+      "ANALYZING_PROFILE": "Analizujemy Twój profil",
+      "DESIGNING_SCHEDULE": "Projektujemy harmonogram",
+      "SELECTING_EXERCISES": "Dobieramy ćwiczenia",
+      "VALIDATING": "Weryfikacja",
+      "DONE": "Plan gotowy!"
+    }
+  },
+  "dashboard": {
+    "greeting": "Cześć",
+    "today": "Dzisiejszy trening",
+    "startWorkout": "Rozpocznij trening",
+    "thisWeek": "Ten tydzień",
+    "lastWorkout": "Ostatni trening",
+    "seeAll": "Wszystko →",
+    "weekOf": "{{count}} z {{total}}",
+    "noPlan": "Brak aktywnego planu",
+    "generatePlan": "Wygeneruj plan",
+    "streak": "Seria",
+    "days": "dni"
+  },
+  "nav": {
+    "home": "DZIŚ",
+    "plan": "PLAN",
+    "history": "HISTORIA",
+    "profile": "PROFIL"
+  },
+  "payment": {
+    "title": "Odblokuj Premium",
+    "sub": "Wygenerowałeś 2 bezpłatne plany. Przejdź na Premium po nieograniczony dostęp.",
+    "cardNumber": "Numer karty",
+    "expiry": "MM/RR",
+    "holder": "Imię i Nazwisko",
+    "cvv": "CVV",
+    "cta": "Zapłać i kontynuuj",
+    "secure": "Płatność bezpieczna"
+  },
+  "workout": {
+    "exercise": "Ćwiczenie {{current}} z {{total}}",
+    "plan": "Plan · {{sets}} × {{reps}} @ RPE {{rpe}}",
+    "rest": "Odpoczynek",
+    "skip": "Pomiń",
+    "repeatLast": "↻ Powtórz ostatnią",
+    "dropSet": "+ Drop set",
+    "substitute": "⇄ Zamień",
+    "finish": "Zakończ trening",
+    "complete": "Ukończono"
+  },
+  "plan": {
+    "title": "Mezocykl",
+    "weeks": "tyg.",
+    "deload": "Deload",
+    "regenerate": "↻ Wygeneruj plan ponownie",
+    "rest": "Odpoczynek",
+    "day": "Dzień {{n}}"
+  },
+  "history": {
+    "list": "Lista",
+    "progress": "Postęp",
+    "recentSessions": "Ostatnie sesje",
+    "e1rm": "e1RM",
+    "weeklyVolume": "Objętość 7d",
+    "sets": "Serie"
+  },
+  "profile": {
+    "trainingData": "Dane treningowe",
+    "settings": "Ustawienia",
+    "darkMode": "Tryb ciemny",
+    "units": "Jednostki",
+    "language": "Język",
+    "logout": "Wyloguj się",
+    "profile": "Profil",
+    "equipment": "Sprzęt",
+    "injuries": "Kontuzje",
+    "benchmarks": "Benchmarki",
+    "metric": "Metryczne",
+    "imperial": "Imperialne"
+  },
+  "errors": {
+    "networkError": "Błąd połączenia. Spróbuj ponownie.",
+    "quotaExceeded": "Wyczerpałeś limit bezpłatnych planów."
+  }
+}

@@ -1,10 +1,14 @@
 // ═══════════════════════════════════════════════════════════
 // GYMIFY AI — Onboarding Wizard (6 Steps)
 // ═══════════════════════════════════════════════════════════
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, ProgressBar, Badge } from '../components/ui/primitives';
-import { TopBar, BackButton, GymifyLogo, AccentLine } from '../components/layout/Layout';
+import { useTranslation } from 'react-i18next';
+import { Button, Input, ProgressBar } from '../components/ui/primitives';
+import { TopBar, BackButton } from '../components/layout/Layout';
+import { useGeneratePlan } from '../api/hooks/usePlan';
+
+const EmailModal = lazy(() => import('../components/modals/EmailModal'));
 
 // ── Types ─────────────────────────────────────────────────
 type Goal = 'LOSE_WEIGHT' | 'BUILD_MUSCLE' | 'IMPROVE_ENDURANCE' | 'STAY_FIT';
@@ -47,8 +51,11 @@ const INITIAL: WizardState = {
 // ── Main Component ────────────────────────────────────────
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardState>(INITIAL);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const generatePlan = useGeneratePlan();
 
   const TOTAL_STEPS = 6;
   const pct = Math.round((step / TOTAL_STEPS) * 100);
@@ -57,21 +64,39 @@ export default function OnboardingPage() {
     setData((prev) => ({ ...prev, ...partial }));
 
   const next = () => {
-    if (step < TOTAL_STEPS) setStep((s) => s + 1);
-    else navigate('/generating');
+    if (step < TOTAL_STEPS) {
+      setStep((s) => s + 1);
+    } else {
+      // Show email modal before generating
+      setShowEmailModal(true);
+    }
   };
+
   const back = () => {
     if (step > 1) setStep((s) => s - 1);
     else navigate('/');
   };
 
+  const handleEmailSuccess = async () => {
+    setShowEmailModal(false);
+    // Save wizard data to localStorage
+    localStorage.setItem('gymify_pending_profile', JSON.stringify(data));
+    try {
+      const result = await generatePlan.mutateAsync();
+      navigate(`/generating?jobId=${result.jobId}`);
+    } catch {
+      // Fallback if backend not available yet
+      navigate('/generating'); // TODO: remove mock
+    }
+  };
+
   const STEP_TITLES = [
-    'Your goal',
-    'About you',
-    'Your schedule',
-    'Equipment',
-    'Health check',
-    'Strength levels',
+    t('onboarding.step1.title'),
+    t('onboarding.step2.title'),
+    t('onboarding.step3.title'),
+    t('onboarding.step4.title'),
+    t('onboarding.step5.title'),
+    t('onboarding.step6.title'),
   ];
 
   return (
@@ -110,55 +135,75 @@ export default function OnboardingPage() {
           onClick={next}
           disabled={step === 1 && !data.goal}
         >
-          {step < TOTAL_STEPS ? 'Continue' : 'Generate My Plan →'}
+          {step < TOTAL_STEPS ? t('onboarding.continue') : t('onboarding.generate')}
         </Button>
         {step === 6 && (
           <button
             className="w-full mt-3 text-xs text-zinc-600 underline underline-offset-2"
             onClick={next}
           >
-            Skip benchmarks
+            {t('onboarding.skip')}
           </button>
         )}
       </div>
+
+      {/* Email modal */}
+      {showEmailModal && (
+        <Suspense fallback={null}>
+          <EmailModal
+            onSuccess={handleEmailSuccess}
+            onClose={() => setShowEmailModal(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
 
 // ── Step 1: Goal ──────────────────────────────────────────
-const GOALS: Array<{ value: Goal; label: string; emoji: string; desc: string }> = [
-  { value: 'LOSE_WEIGHT',       label: 'Lose Weight',        emoji: '🔥', desc: 'Burn fat, get lean' },
-  { value: 'BUILD_MUSCLE',      label: 'Build Muscle',       emoji: '💪', desc: 'Gain size and strength' },
-  { value: 'IMPROVE_ENDURANCE', label: 'Boost Endurance',    emoji: '⚡', desc: 'Train longer, push harder' },
-  { value: 'STAY_FIT',          label: 'Stay Active',        emoji: '🏅', desc: 'Maintain and move well' },
-];
+const GOAL_EMOJIS: Record<Goal, string> = {
+  LOSE_WEIGHT: '🔥',
+  BUILD_MUSCLE: '💪',
+  IMPROVE_ENDURANCE: '⚡',
+  STAY_FIT: '🏅',
+};
+
+const GOAL_DESCS: Record<Goal, string> = {
+  LOSE_WEIGHT: 'Burn fat, get lean',
+  BUILD_MUSCLE: 'Gain size and strength',
+  IMPROVE_ENDURANCE: 'Train longer, push harder',
+  STAY_FIT: 'Maintain and move well',
+};
 
 function StepGoal({ value, onChange }: { value?: Goal; onChange: (g: Goal) => void }) {
+  const { t } = useTranslation();
+  const GOALS: Goal[] = ['LOSE_WEIGHT', 'BUILD_MUSCLE', 'IMPROVE_ENDURANCE', 'STAY_FIT'];
+
   return (
     <div>
-      <p className="text-label mb-2">Step 1 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">What's your primary goal?</h2>
-      <p className="text-zinc-400 text-sm mb-8">This shapes everything — your volume, intensity, exercise selection.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 1, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step1.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-8">{t('onboarding.step1.sub')}</p>
       <div className="flex flex-col gap-3">
-        {GOALS.map(({ value: v, label, emoji, desc }) => (
+        {GOALS.map((g) => (
           <button
-            key={v}
-            onClick={() => onChange(v)}
+            key={g}
+            onClick={() => onChange(g)}
             className={`
               text-left rounded-2xl border-2 p-4 flex items-center gap-4 transition-all duration-200
-              ${value === v
+              ${value === g
                 ? 'border-orange-500 bg-orange-500/10 glow-sm'
                 : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
               }
             `}
-            aria-pressed={value === v}
+            aria-pressed={value === g}
           >
-            <span className="text-3xl flex-shrink-0">{emoji}</span>
+            <span className="text-3xl flex-shrink-0">{GOAL_EMOJIS[g]}</span>
             <div>
-              <div className="heading-3 text-zinc-100">{label}</div>
-              <div className="text-xs text-zinc-500 mt-0.5">{desc}</div>
+              <div className="heading-3 text-zinc-100">{t(`onboarding.goals.${g}`)}</div>
+              <div className="text-xs text-zinc-500 mt-0.5">{GOAL_DESCS[g]}</div>
             </div>
-            {value === v && (
+            {value === g && (
               <span className="ml-auto flex-shrink-0">
                 <CheckCircleIcon className="text-orange-500 w-5 h-5" />
               </span>
@@ -172,17 +217,18 @@ function StepGoal({ value, onChange }: { value?: Goal; onChange: (g: Goal) => vo
 
 // ── Step 2: Basics ────────────────────────────────────────
 const SEX_OPTIONS: Array<{ value: Sex; label: string }> = [
-  { value: 'MALE',   label: 'Male'  },
-  { value: 'FEMALE', label: 'Female'},
-  { value: 'OTHER',  label: 'Other' },
+  { value: 'MALE',   label: 'Male'   },
+  { value: 'FEMALE', label: 'Female' },
+  { value: 'OTHER',  label: 'Other'  },
 ];
 
 function StepBasics({ data, onChange }: { data: WizardState; onChange: (p: Partial<WizardState>) => void }) {
+  const { t } = useTranslation();
   return (
     <div>
-      <p className="text-label mb-2">Step 2 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">Tell us about yourself</h2>
-      <p className="text-zinc-400 text-sm mb-8">Used to calibrate training load and progression.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 2, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step2.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-8">{t('onboarding.step2.sub')}</p>
 
       {/* Unit toggle */}
       <div className="flex gap-2 mb-6">
@@ -257,17 +303,18 @@ function StepBasics({ data, onChange }: { data: WizardState; onChange: (p: Parti
 const DAYS_OPTIONS = [2, 3, 4, 5, 6];
 const DURATION_OPTIONS = [30, 45, 60, 75, 90, 120];
 const LEVELS: Array<{ value: FitnessLevel; label: string; desc: string }> = [
-  { value: 'BEGINNER',     label: 'Beginner',     desc: '< 1 year' },
+  { value: 'BEGINNER',     label: 'Beginner',     desc: '< 1 year'  },
   { value: 'INTERMEDIATE', label: 'Intermediate', desc: '1–3 years' },
-  { value: 'ADVANCED',     label: 'Advanced',     desc: '3+ years' },
+  { value: 'ADVANCED',     label: 'Advanced',     desc: '3+ years'  },
 ];
 
 function StepSchedule({ data, onChange }: { data: WizardState; onChange: (p: Partial<WizardState>) => void }) {
+  const { t } = useTranslation();
   return (
     <div>
-      <p className="text-label mb-2">Step 3 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">Your schedule</h2>
-      <p className="text-zinc-400 text-sm mb-8">We'll fit the program around your life.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 3, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step3.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-8">{t('onboarding.step3.sub')}</p>
 
       {/* Days/week */}
       <div className="mb-6">
@@ -350,14 +397,15 @@ const EQUIPMENT_OPTIONS = [
 ];
 
 function StepEquipment({ selected, onChange }: { selected: string[]; onChange: (e: string[]) => void }) {
+  const { t } = useTranslation();
   const toggle = (v: string) =>
     onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
 
   return (
     <div>
-      <p className="text-label mb-2">Step 4 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">Available equipment</h2>
-      <p className="text-zinc-400 text-sm mb-8">Only select what's actually accessible to you.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 4, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step4.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-8">{t('onboarding.step4.sub')}</p>
 
       <div className="grid grid-cols-2 gap-2">
         {EQUIPMENT_OPTIONS.map(({ value, label, emoji }) => {
@@ -389,6 +437,7 @@ function StepEquipment({ selected, onChange }: { selected: string[]; onChange: (
 const INJURY_AREAS = ['SHOULDER', 'ELBOW', 'LOWER_BACK', 'UPPER_BACK', 'HIP', 'KNEE', 'ANKLE'];
 
 function StepHealth({ data, onChange }: { data: WizardState; onChange: (p: Partial<WizardState>) => void }) {
+  const { t } = useTranslation();
   const toggleInjury = (area: string) => {
     const injuries = data.injuries.includes(area)
       ? data.injuries.filter((x) => x !== area)
@@ -398,9 +447,9 @@ function StepHealth({ data, onChange }: { data: WizardState; onChange: (p: Parti
 
   return (
     <div>
-      <p className="text-label mb-2">Step 5 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">Health check</h2>
-      <p className="text-zinc-400 text-sm mb-8">Your safety is the priority. Be honest — the AI avoids exercises that aggravate your injuries.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 5, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step5.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-8">{t('onboarding.step5.sub')}</p>
 
       {/* Injuries */}
       <div className="mb-6">
@@ -474,22 +523,23 @@ function CheckboxRow({ checked, onChange, label }: { checked: boolean; onChange:
 
 // ── Step 6: Benchmarks ────────────────────────────────────
 const BENCHMARKS = [
-  { slug: 'barbell-back-squat', label: 'Back Squat' },
-  { slug: 'barbell-bench-press', label: 'Bench Press' },
-  { slug: 'barbell-deadlift', label: 'Deadlift' },
-  { slug: 'barbell-overhead-press', label: 'Overhead Press' },
+  { slug: 'barbell-back-squat',    label: 'Back Squat'      },
+  { slug: 'barbell-bench-press',   label: 'Bench Press'     },
+  { slug: 'barbell-deadlift',      label: 'Deadlift'        },
+  { slug: 'barbell-overhead-press',label: 'Overhead Press'  },
 ];
 
 function StepBenchmarks({ data, onChange }: { data: WizardState; onChange: (p: Partial<WizardState>) => void }) {
+  const { t } = useTranslation();
   const updateBenchmark = (slug: string, val: string) => {
     onChange({ benchmarks: { ...data.benchmarks, [slug]: +val } });
   };
 
   return (
     <div>
-      <p className="text-label mb-2">Step 6 of 6</p>
-      <h2 className="heading-1 text-zinc-100 mb-1">Strength benchmarks</h2>
-      <p className="text-zinc-400 text-sm mb-2">Optional — helps AI calibrate your starting weights.</p>
+      <p className="text-label mb-2">{t('onboarding.step', { current: 6, total: 6 })}</p>
+      <h2 className="heading-1 text-zinc-100 mb-1">{t('onboarding.step6.title')}</h2>
+      <p className="text-zinc-400 text-sm mb-2">{t('onboarding.step6.sub')}</p>
       <p className="text-zinc-600 text-xs mb-8">Enter your estimated 1-rep max (or skip).</p>
 
       <div className="flex flex-col gap-3">
