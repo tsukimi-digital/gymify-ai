@@ -15,6 +15,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "types": ["vitest/globals"],
     "baseUrl": ".",
     "paths": {
       "@gymify/shared": ["../shared/src/index.ts"],

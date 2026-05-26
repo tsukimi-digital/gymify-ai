@@ -42,7 +42,7 @@ router.get('/progress', requireAuth, asyncHandler(async (req: Request, res: Resp
   // Calculate streak: consecutive completed days ending today
   let streak = 0;
   const completedDays = new Set(
-    sessions.map(s => formatDate(new Date(s.scheduledDate)))
+    sessions.map((s: { scheduledDate: Date }) => formatDate(new Date(s.scheduledDate)))
   );
   const checkDate = new Date(now);
   while (completedDays.has(formatDate(checkDate))) {

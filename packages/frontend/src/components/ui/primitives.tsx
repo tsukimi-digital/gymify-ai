@@ -102,7 +102,7 @@ export function Badge({ color = 'gray', children }: { color?: BadgeColor; childr
 }
 
 // ── Input ─────────────────────────────────────────────────
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
   hint?: string;

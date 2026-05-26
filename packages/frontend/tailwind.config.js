@@ -57,6 +57,11 @@ export default {
       borderRadius: {
         '4xl': '2rem',
       },
+      zIndex: {
+        'modal':   '200',
+        'toast':   '300',
+        'overlay': '400',
+      },
       boxShadow: {
         'glow-orange': '0 0 20px 0 rgba(242, 100, 25, 0.35)',
         'glow-sm':     '0 0 8px 0 rgba(242, 100, 25, 0.25)',

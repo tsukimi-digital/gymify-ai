@@ -82,7 +82,7 @@ export default function PlanPage() {
 
             {/* Deload badge */}
             {schedule[currentWeek]?.isDeload && (
-              <Badge color="yellow" className="mb-4">{t('plan.deload')}</Badge>
+              <div className="mb-4"><Badge color="yellow">{t('plan.deload')}</Badge></div>
             )}
 
             {/* Days list */}

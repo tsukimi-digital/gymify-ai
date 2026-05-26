@@ -157,7 +157,7 @@ describe('POST /api/auth/logout', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('ok', true);
     // Check cookies are cleared
-    const setCookies = res.headers['set-cookie'] as string[];
+    const setCookies = res.headers['set-cookie'] as unknown as string[];
     expect(setCookies).toBeDefined();
     const hasClearedRefresh = setCookies.some((c: string) => c.includes('gymify_refresh=;'));
     const hasClearedCsrf = setCookies.some((c: string) => c.includes('gymify_csrf=;'));

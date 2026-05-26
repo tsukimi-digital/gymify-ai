@@ -28,13 +28,13 @@ export async function resolveOrCreateUser(params: ResolveParams) {
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     await prisma.deviceFingerprint.create({
-      data: { userId: existingUser.id, token: fingerprintToken, ipAddress, userAgent, extraMeta },
+      data: { userId: existingUser.id, token: fingerprintToken, ipAddress, userAgent, extraMeta: extraMeta as any },
     });
     return existingUser;
   }
 
   // 3. Create new user + fingerprint
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: any) => {
     const user = await tx.user.create({ data: { email } });
     await tx.deviceFingerprint.create({
       data: { userId: user.id, token: fingerprintToken, ipAddress, userAgent, extraMeta },
