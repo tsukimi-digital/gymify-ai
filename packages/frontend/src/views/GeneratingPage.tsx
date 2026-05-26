@@ -3,16 +3,11 @@
 // SSE-driven progress with named phases
 // ═══════════════════════════════════════════════════════════
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ProgressBar } from '../components/ui/primitives';
-import { GymifyLogo, AccentLine } from '../components/layout/Layout';
-
-type Phase =
-  | 'ANALYZING_PROFILE'
-  | 'DESIGNING_SCHEDULE'
-  | 'SELECTING_EXERCISES'
-  | 'VALIDATING'
-  | 'DONE';
+import { GymifyLogo } from '../components/layout/Layout';
+import { useGenerationProgress, type Phase } from '../api/hooks/usePlan';
 
 interface PhaseInfo {
   label: string;
@@ -20,20 +15,27 @@ interface PhaseInfo {
   progress: number;
 }
 
-const PHASE_MAP: Record<Phase, PhaseInfo> = {
-  ANALYZING_PROFILE:   { label: 'Analyzing your profile',     desc: 'Reading your goals, equipment, injuries and benchmarks…',      progress: 20  },
-  DESIGNING_SCHEDULE:  { label: 'Designing your mesocycle',   desc: 'Building a 4-week progressive overload schedule…',             progress: 45  },
-  SELECTING_EXERCISES: { label: 'Selecting exercises',         desc: 'Matching moves to your available equipment and restrictions…', progress: 70  },
-  VALIDATING:          { label: 'Validating your plan',        desc: 'Checking progressions, RPE targets, and deload week…',         progress: 90  },
-  DONE:                { label: 'Plan ready!',                 desc: 'Your personalised mesocycle is ready.',                        progress: 100 },
+const PHASE_PROGRESS: Record<Phase, number> = {
+  ANALYZING_PROFILE:   20,
+  DESIGNING_SCHEDULE:  45,
+  SELECTING_EXERCISES: 70,
+  VALIDATING:          90,
+  DONE:                100,
 };
 
-// Simulates SSE phases for demo — replace with real EventSource in production
-function useGenerationProgress(jobId: string) {
+const PHASE_DESCS: Record<Phase, string> = {
+  ANALYZING_PROFILE:   'Reading your goals, equipment, injuries and benchmarks…',
+  DESIGNING_SCHEDULE:  'Building a 4-week progressive overload schedule…',
+  SELECTING_EXERCISES: 'Matching moves to your available equipment and restrictions…',
+  VALIDATING:          'Checking progressions, RPE targets, and deload week…',
+  DONE:                'Your personalised mesocycle is ready.',
+};
+
+// Fallback mock for when there's no jobId (demo mode)
+function useMockProgress() {
   const [phase, setPhase] = useState<Phase>('ANALYZING_PROFILE');
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const phases: Phase[] = [
@@ -43,54 +45,43 @@ function useGenerationProgress(jobId: string) {
       'VALIDATING',
       'DONE',
     ];
-
     let i = 0;
     const tick = () => {
       if (i >= phases.length) return;
       const p = phases[i];
       setPhase(p);
-      setProgress(PHASE_MAP[p].progress);
+      setProgress(PHASE_PROGRESS[p]);
       if (p === 'DONE') { setDone(true); return; }
       i++;
       setTimeout(tick, 1800 + Math.random() * 800);
     };
-
     const timer = setTimeout(tick, 400);
     return () => clearTimeout(timer);
+  }, []);
 
-    /* ── Production: replace with real SSE ──────────────────
-    const es = new EventSource(`/api/plans/jobs/${jobId}/stream`, {
-      withCredentials: true,
-    });
-    es.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      setPhase(data.phase);
-      setProgress(data.progress);
-      if (data.phase === 'DONE') { setDone(true); es.close(); }
-    };
-    es.onerror = () => {
-      setError('Generation failed. Please try again.');
-      es.close();
-    };
-    return () => es.close();
-    ─────────────────────────────────────────────────────── */
-  }, [jobId]);
-
-  return { phase, progress, done, error };
+  return { phase, progress, done, error: null };
 }
 
 export default function GeneratingPage() {
   const navigate = useNavigate();
-  const jobId = 'demo-job';
-  const { phase, progress, done, error } = useGenerationProgress(jobId);
-  const info = PHASE_MAP[phase];
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('jobId');
+
+  // Use real SSE if jobId present, otherwise mock for demo // TODO: remove mock
+  const real = useGenerationProgress(jobId);
+  const mock = useMockProgress();
+  const { phase, progress, done, error } = jobId ? real : mock;
 
   useEffect(() => {
     if (done) {
-      const t = setTimeout(() => navigate('/dashboard'), 1200);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => navigate('/dashboard'), 1200);
+      return () => clearTimeout(timer);
     }
   }, [done, navigate]);
+
+  const phaseLabel = t(`generating.phases.${phase}`);
+  const phaseDesc = PHASE_DESCS[phase];
 
   return (
     <div className="min-h-dvh bg-zinc-950 flex flex-col items-center justify-center px-6 relative overflow-hidden">
@@ -122,9 +113,7 @@ export default function GeneratingPage() {
           }}
           aria-hidden="true"
         />
-        <div
-          className="absolute inset-2 rounded-full bg-zinc-950 flex items-center justify-center"
-        >
+        <div className="absolute inset-2 rounded-full bg-zinc-950 flex items-center justify-center">
           {done ? (
             <span className="text-4xl animate-fade-in">✓</span>
           ) : (
@@ -147,10 +136,10 @@ export default function GeneratingPage() {
       {/* Phase label */}
       <div className="text-center mb-8 min-h-[5rem]" aria-live="polite" aria-atomic="true">
         <h2 className="heading-2 text-zinc-100 mb-2 transition-all duration-300">
-          {info.label}
+          {phaseLabel}
         </h2>
         <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed transition-all duration-300">
-          {info.desc}
+          {phaseDesc}
         </p>
       </div>
 
@@ -161,36 +150,34 @@ export default function GeneratingPage() {
 
       {/* Phase steps */}
       <div className="flex flex-col gap-2 w-full max-w-xs">
-        {(Object.entries(PHASE_MAP) as [Phase, PhaseInfo][])
-          .filter(([p]) => p !== 'DONE')
-          .map(([p, info]) => {
-            const done_ = PHASE_MAP[phase].progress >= info.progress;
-            const current = p === phase && phase !== 'DONE';
-            return (
-              <div key={p} className="flex items-center gap-3">
-                <div
-                  className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-300 ${
-                    done_
-                      ? 'bg-orange-500 border-orange-500'
-                      : current
-                        ? 'border-orange-500 bg-transparent animate-pulse'
-                        : 'border-zinc-700 bg-transparent'
-                  }`}
-                >
-                  {done_ && (
-                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="10 3 5 9 2 6"/>
-                    </svg>
-                  )}
-                </div>
-                <span className={`text-xs transition-all ${
-                  current ? 'text-orange-400 font-semibold' : done_ ? 'text-zinc-400' : 'text-zinc-600'
-                }`}>
-                  {info.label}
-                </span>
+        {(['ANALYZING_PROFILE', 'DESIGNING_SCHEDULE', 'SELECTING_EXERCISES', 'VALIDATING'] as Phase[]).map((p) => {
+          const isDone = PHASE_PROGRESS[phase] >= PHASE_PROGRESS[p];
+          const isCurrent = p === phase && phase !== 'DONE';
+          return (
+            <div key={p} className="flex items-center gap-3">
+              <div
+                className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-300 ${
+                  isDone
+                    ? 'bg-orange-500 border-orange-500'
+                    : isCurrent
+                      ? 'border-orange-500 bg-transparent animate-pulse'
+                      : 'border-zinc-700 bg-transparent'
+                }`}
+              >
+                {isDone && (
+                  <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="10 3 5 9 2 6"/>
+                  </svg>
+                )}
               </div>
-            );
-          })}
+              <span className={`text-xs transition-all ${
+                isCurrent ? 'text-orange-400 font-semibold' : isDone ? 'text-zinc-400' : 'text-zinc-600'
+              }`}>
+                {t(`generating.phases.${p}`)}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Error state */}
