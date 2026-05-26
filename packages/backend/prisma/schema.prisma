@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  isPremium      Boolean   @default(false)
+  plansGenerated Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  fingerprints DeviceFingerprint[]
+  authTokens   AuthToken[]
+  payments     PaymentRecord[]
+}
+
+model DeviceFingerprint {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  ipAddress  String
+  userAgent  String
+  extraMeta  Json?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuthToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model PaymentRecord {
+  id           String   @id @default(uuid())
+  userId       String
+  cardLastFour String   @db.Char(4)
+  cardExpiry   String   @db.Char(5)
+  cardHolder   String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
