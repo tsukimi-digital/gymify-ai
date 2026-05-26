@@ -1,18 +1,12 @@
 import { Router } from 'express';
-import { prisma } from '../db.js';
+import { isDatabaseAvailable } from '../db.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 
 router.get('/', asyncHandler(async (_req, res) => {
-  let dbStatus: 'up' | 'down' = 'down';
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    dbStatus = 'up';
-  } catch {
-    // DB not available
-  }
-  res.json({ ok: dbStatus === 'up', db: dbStatus, timestamp: new Date().toISOString() });
+  const dbUp = await isDatabaseAvailable();
+  res.json({ ok: dbUp, db: dbUp ? 'up' : 'down', timestamp: new Date().toISOString() });
 }));
 
 export default router;
