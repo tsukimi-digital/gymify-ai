@@ -2,6 +2,9 @@
   "name": "@gymify/backend",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "ts-node --esm prisma/seed.ts"
+  },
   "scripts": {
     "dev": "nodemon --exec 'ts-node --esm' src/index.ts",
     "build": "tsc",
