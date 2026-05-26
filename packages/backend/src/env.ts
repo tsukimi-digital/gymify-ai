@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().default('postgresql://localhost:5432/gymify_dev'),
-  JWT_SECRET: z.string().min(16).default('dev-jwt-secret-change-in-production!!'),
-  JWT_REFRESH_SECRET: z.string().min(16).default('dev-refresh-secret-change-in-production!'),
+  DATABASE_URL: z.string(),
+  JWT_SECRET: z.string().min(16),
+  JWT_REFRESH_SECRET: z.string().min(16),
   PORT: z.string().default('3001').transform(Number),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),

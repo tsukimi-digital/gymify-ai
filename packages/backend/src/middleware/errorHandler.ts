@@ -20,14 +20,6 @@ export class QuotaExceededError extends AppError {
   }
 }
 
-/** Prisma error codes that indicate a connection/DB-unavailable problem */
-function isPrismaConnectionError(err: unknown): boolean {
-  if (typeof err !== 'object' || err === null) return false;
-  const code = (err as Record<string, unknown>).code;
-  // P1xxx = connection/auth errors in Prisma
-  return typeof code === 'string' && code.startsWith('P1');
-}
-
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ZodError) {
     return res.status(400).json({
@@ -37,12 +29,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       error: { code: err.code, message: err.message, details: err.details },
-    });
-  }
-  if (isPrismaConnectionError(err)) {
-    logger.warn('Database unavailable');
-    return res.status(503).json({
-      error: { code: 'DB_UNAVAILABLE', message: 'Database is not available. Please try again later.' },
     });
   }
   logger.error(err);
