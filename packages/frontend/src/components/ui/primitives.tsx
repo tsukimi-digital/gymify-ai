@@ -111,10 +111,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   rightElement?: React.ReactNode;
 }
 
-export function Input({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
   label, error, hint, size = 'md', leftElement, rightElement,
   className = '', id, ...props
-}: InputProps) {
+}, ref) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -125,6 +125,7 @@ export function Input({
           <span className="absolute left-3 text-zinc-500 pointer-events-none">{leftElement}</span>
         )}
         <input
+          ref={ref}
           id={inputId}
           className={`
             ${size === 'lg' ? 'input-lg' : 'input'}
@@ -152,7 +153,8 @@ export function Input({
       )}
     </div>
   );
-}
+});
+Input.displayName = 'Input';
 
 // ── Progress Bar ──────────────────────────────────────────
 export function ProgressBar({ value, max = 100, label }: { value: number; max?: number; label?: string }) {
