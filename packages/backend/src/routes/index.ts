@@ -6,6 +6,7 @@ import plansRouter from './plans.js';
 import paymentRouter from './payment.js';
 import sessionsRouter from './sessions.js';
 import statsRouter from './stats.js';
+import exercisesRouter from './exercises.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/plans', plansRouter);
 router.use('/payment', paymentRouter);
 router.use('/sessions', sessionsRouter);
 router.use('/stats', statsRouter);
+router.use('/exercises', exercisesRouter);
 
 export default router;
