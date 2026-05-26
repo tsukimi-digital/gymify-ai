@@ -7,8 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { Button, Input, ProgressBar } from '../components/ui/primitives';
 import { TopBar, BackButton } from '../components/layout/Layout';
 import { useGeneratePlan } from '../api/hooks/usePlan';
+import { apiFetch, QuotaExceededError } from '../api/client';
 
 const EmailModal = lazy(() => import('../components/modals/EmailModal'));
+const PaymentModal = lazy(() => import('../components/modals/PaymentModal'));
 
 // ── Types ─────────────────────────────────────────────────
 type Goal = 'LOSE_WEIGHT' | 'BUILD_MUSCLE' | 'IMPROVE_ENDURANCE' | 'STAY_FIT';
@@ -55,6 +57,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardState>(INITIAL);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const generatePlan = useGeneratePlan();
 
   const TOTAL_STEPS = 6;
@@ -77,17 +80,45 @@ export default function OnboardingPage() {
     else navigate('/');
   };
 
-  const handleEmailSuccess = async () => {
-    setShowEmailModal(false);
-    // Save wizard data to localStorage
-    localStorage.setItem('gymify_pending_profile', JSON.stringify(data));
+  const doGeneratePlan = async () => {
     try {
       const result = await generatePlan.mutateAsync();
       navigate(`/generating?jobId=${result.jobId}`);
-    } catch {
-      // Fallback if backend not available yet
-      navigate('/generating'); // TODO: remove mock
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        setShowPaymentModal(true);
+      }
     }
+  };
+
+  const handleEmailSuccess = async () => {
+    setShowEmailModal(false);
+    // Build profile payload from wizard data
+    const profilePayload = {
+      goal: data.goal ?? 'STAY_FIT',
+      sex: data.sex ?? 'OTHER',
+      weightKg: data.weightKg ?? 75,
+      heightCm: data.heightCm ?? 175,
+      age: data.age ?? 25,
+      unitPreference: data.unitPreference,
+      daysPerWeek: data.daysPerWeek ?? 3,
+      sessionMinutes: data.sessionMinutes ?? 60,
+      trainingYears: data.trainingYears ?? 0,
+      fitnessSelfRating: data.fitnessLevel ?? 'BEGINNER',
+      parqAcknowledged: data.parqAcknowledged,
+      medicalDisclaimer: data.medicalDisclaimer,
+      equipment: data.equipment.map((type) => ({ type })),
+      injuries: data.injuries.map((bodyArea) => ({ bodyArea })),
+      benchmarks: Object.entries(data.benchmarks)
+        .filter(([, v]) => v > 0)
+        .map(([exerciseSlug, estimated1RM]) => ({ exerciseSlug, estimated1RM })),
+    };
+    try {
+      await apiFetch('/profile', { method: 'PUT', body: JSON.stringify(profilePayload) });
+    } catch {
+      // continue even if profile save fails — worker will use defaults
+    }
+    await doGeneratePlan();
   };
 
   const STEP_TITLES = [
@@ -153,6 +184,19 @@ export default function OnboardingPage() {
           <EmailModal
             onSuccess={handleEmailSuccess}
             onClose={() => setShowEmailModal(false)}
+          />
+        </Suspense>
+      )}
+
+      {/* Payment modal — shown when quota is exceeded */}
+      {showPaymentModal && (
+        <Suspense fallback={null}>
+          <PaymentModal
+            onSuccess={() => {
+              setShowPaymentModal(false);
+              doGeneratePlan();
+            }}
+            onClose={() => setShowPaymentModal(false)}
           />
         </Suspense>
       )}

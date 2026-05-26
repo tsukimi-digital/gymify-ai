@@ -104,4 +104,55 @@ router.get('/active', requireAuth, asyncHandler(async (req: Request, res: Respon
   res.json({ plan });
 }));
 
+// GET /api/plans — paginated history
+router.get('/', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const limit = Math.min(parseInt(String(req.query.limit ?? '10'), 10) || 10, 50);
+  const cursor = req.query.cursor as string | undefined;
+
+  const plans = await prisma.workoutPlan.findMany({
+    where: { userId, ...(cursor ? { id: { lt: cursor } } : {}) },
+    orderBy: { createdAt: 'desc' },
+    take: limit + 1,
+    select: { id: true, isActive: true, weeksTotal: true, deloadWeekIndex: true, createdAt: true, modelId: true },
+  });
+
+  const hasMore = plans.length > limit;
+  const page = hasMore ? plans.slice(0, limit) : plans;
+  res.json({ plans: page, nextCursor: hasMore ? page[page.length - 1].id : null });
+}));
+
+// GET /api/plans/:id — specific plan
+router.get('/:id', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const { id } = req.params;
+
+  const plan = await prisma.workoutPlan.findUnique({ where: { id }, include: { days: true } });
+  if (!plan || plan.userId !== userId) {
+    throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404);
+  }
+
+  res.json({ plan });
+}));
+
+// POST /api/plans/:id/regenerate
+router.post('/:id/regenerate', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const { id } = req.params;
+  const body = planGenerateSchema.parse(req.body);
+
+  const plan = await prisma.workoutPlan.findUnique({ where: { id } });
+  if (!plan || plan.userId !== userId) {
+    throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404);
+  }
+
+  await checkQuota(userId);
+
+  const job = await prisma.planGenerationJob.create({
+    data: { userId, status: 'QUEUED', reason: body.reason, previousPlanId: id },
+  });
+
+  res.json({ jobId: job.id });
+}));
+
 export default router;
