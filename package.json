@@ -1,7 +1,9 @@
 {
   "name": "gymify-ai",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently -n 'backend,worker,frontend' --prefix-colors 'cyan,yellow,magenta' 'npm run dev -w packages/backend' 'npm run dev -w packages/worker' 'npm run dev -w packages/frontend'",
     "build": "npm run build -w packages/shared && npm run build -w packages/backend && npm run build -w packages/worker && npm run build -w packages/frontend",
@@ -14,11 +16,12 @@
     "db:studio": "prisma studio --schema=packages/backend/prisma/schema.prisma"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
     "@playwright/test": "^1.44.0",
-    "typescript": "^5.4.5",
-    "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0"
+    "@typescript-eslint/parser": "^7.13.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.4.5"
   }
 }

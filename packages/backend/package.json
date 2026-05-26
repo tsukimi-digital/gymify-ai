@@ -6,7 +6,7 @@
     "seed": "ts-node --esm prisma/seed.ts"
   },
   "scripts": {
-    "dev": "nodemon --exec 'ts-node --esm' src/index.ts",
+    "dev": "nodemon --exec 'tsx' src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run --reporter=verbose",
