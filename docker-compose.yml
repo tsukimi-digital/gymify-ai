@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gymify
+      POSTGRES_PASSWORD: gymify_dev
+      POSTGRES_DB: gymify_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymify -d gymify_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: packages/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://gymify:gymify_dev@postgres:5432/gymify_dev
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/backend/src:/app/src
+      - ./packages/shared/src:/shared/src
+
+  worker:
+    build:
+      context: packages/worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://gymify:gymify_dev@postgres:5432/gymify_dev
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/worker/src:/app/src
+      - ./packages/shared/src:/shared/src
+
+  frontend:
+    build:
+      context: packages/frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3001
+    volumes:
+      - ./packages/frontend/src:/app/src
+      - ./packages/shared/src:/shared/src
+
+volumes:
+  pgdata:

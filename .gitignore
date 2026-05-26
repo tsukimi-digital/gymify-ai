@@ -1,1 +1,20 @@
 .idea/
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+coverage/
+.nyc_output/
+
+# Vite
+packages/frontend/dist/
+packages/frontend/.vite/
+
+# Playwright
+playwright-report/
+test-results/
+e2e/test-results/
+
+# TypeScript build
+*.tsbuildinfo

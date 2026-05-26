@@ -1,0 +1,24 @@
+{
+  "name": "gymify-ai",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "concurrently -n 'backend,worker,frontend' --prefix-colors 'cyan,yellow,magenta' 'npm run dev -w packages/backend' 'npm run dev -w packages/worker' 'npm run dev -w packages/frontend'",
+    "build": "npm run build -w packages/shared && npm run build -w packages/backend && npm run build -w packages/worker && npm run build -w packages/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test",
+    "lint": "eslint 'packages/*/src/**/*.{ts,tsx}'",
+    "db:up": "docker-compose up -d postgres",
+    "db:migrate": "npm run prisma:migrate -w packages/backend",
+    "db:seed": "npm run prisma:seed -w packages/backend",
+    "db:studio": "prisma studio --schema=packages/backend/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "@playwright/test": "^1.44.0",
+    "typescript": "^5.4.5",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0"
+  }
+}

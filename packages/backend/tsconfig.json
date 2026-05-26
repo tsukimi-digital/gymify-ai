@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@gymify/shared": ["../shared/src/index.ts"]
+    }
+  },
+  "include": ["src", "prisma/seed.ts"],
+  "exclude": ["dist", "node_modules"]
+}
