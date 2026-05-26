@@ -16,9 +16,16 @@ model User {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  fingerprints DeviceFingerprint[]
-  authTokens   AuthToken[]
-  payments     PaymentRecord[]
+  fingerprints       DeviceFingerprint[]
+  authTokens         AuthToken[]
+  payments           PaymentRecord[]
+  profile            UserProfile?
+  equipment          EquipmentAvailability[]
+  injuries           Injury[]
+  benchmarks         StrengthBenchmark[]
+  workoutPlans       WorkoutPlan[]
+  planGenerationJobs PlanGenerationJob[]
+  aiUsageMeter       AiUsageMeter?
 }
 
 model DeviceFingerprint {
@@ -62,4 +69,159 @@ model PaymentRecord {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model UserProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  goal             String
+  sex              String
+  weightKg         Float
+  heightCm         Float
+  age              Int
+  unitPreference   String   @default("METRIC")
+  daysPerWeek      Int
+  sessionMinutes   Int
+  trainingYears    Float    @default(0)
+  fitnessSelfRating String
+  parqAcknowledged Boolean  @default(false)
+  medicalDisclaimer Boolean @default(false)
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EquipmentAvailability {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String
+  maxWeightKg Float?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Injury {
+  id          String   @id @default(uuid())
+  userId      String
+  bodyArea    String
+  side        String?
+  status      String?
+  restriction String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Exercise {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  muscleGroup     String
+  equipmentType   String
+  movementPattern String
+  isCompound      Boolean  @default(false)
+  difficulty      String
+  instructions    String
+  videoUrl        String?
+  imageUrl        String?
+  isCardio        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  benchmarks StrengthBenchmark[]
+}
+
+model StrengthBenchmark {
+  id           String   @id @default(uuid())
+  userId       String
+  exerciseId   String
+  estimated1RM Float
+  recordedAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([exerciseId])
+}
+
+model WorkoutPlan {
+  id               String    @id @default(uuid())
+  userId           String
+  content          Json
+  prompt           String?
+  promptVersion    String?
+  modelId          String?
+  weeksTotal       Int
+  deloadWeekIndex  Int?
+  isActive         Boolean   @default(false)
+  generationJobId  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days             WorkoutPlanDay[]
+  generationJob    PlanGenerationJob? @relation(fields: [generationJobId], references: [id])
+
+  @@index([userId])
+  @@index([userId, isActive])
+}
+
+model WorkoutPlanDay {
+  id          String   @id @default(uuid())
+  planId      String
+  weekIndex   Int
+  dayIndex    Int
+  focus       String
+  plannedJson Json
+  createdAt   DateTime @default(now())
+
+  plan WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+}
+
+model PlanGenerationJob {
+  id             String    @id @default(uuid())
+  userId         String
+  status         String    @default("QUEUED")
+  reason         String?
+  previousPlanId String?
+  progress       Int       @default(0)
+  phase          String?
+  errorCode      String?
+  errorMessage   String?
+  inputTokens    Int?
+  outputTokens   Int?
+  costUsd        Float?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutPlans WorkoutPlan[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AiUsageMeter {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  hourlyCount      Int      @default(0)
+  hourlyResetAt    DateTime @default(now())
+  dailyGlobalCount Int      @default(0)
+  dailyResetAt     DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
