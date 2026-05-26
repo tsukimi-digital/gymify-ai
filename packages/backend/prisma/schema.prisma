@@ -26,6 +26,7 @@ model User {
   workoutPlans       WorkoutPlan[]
   planGenerationJobs PlanGenerationJob[]
   aiUsageMeter       AiUsageMeter?
+  workoutSessions    WorkoutSession[]
 }
 
 model DeviceFingerprint {
@@ -136,7 +137,8 @@ model Exercise {
   isCardio        Boolean  @default(false)
   createdAt       DateTime @default(now())
 
-  benchmarks StrengthBenchmark[]
+  benchmarks       StrengthBenchmark[]
+  sessionExercises SessionExercise[]
 }
 
 model StrengthBenchmark {
@@ -224,4 +226,64 @@ model AiUsageMeter {
   updatedAt        DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutSession {
+  id            String    @id @default(uuid())
+  userId        String
+  planId        String?
+  planDayId     String?
+  scheduledDate DateTime
+  status        String    @default("SCHEDULED")
+  startedAt     DateTime?
+  completedAt   DateTime?
+  overallRpe    Int?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises SessionExercise[]
+
+  @@index([userId, scheduledDate])
+  @@index([userId, status])
+}
+
+model SessionExercise {
+  id                String   @id @default(uuid())
+  sessionId         String
+  exerciseId        String
+  plannedExerciseId String?
+  orderIndex        Int
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id])
+  setLogs  SetLog[]
+
+  @@index([sessionId])
+}
+
+model SetLog {
+  id                String   @id @default(uuid())
+  sessionExerciseId String
+  clientSetId       String
+  setIndex          Int
+  setType           String   @default("WORKING")
+  reps              Int?
+  weightKg          Float?
+  rpe               Float?
+  restSeconds       Int?
+  durationSec       Int?
+  distanceM         Int?
+  avgHeartRate      Int?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionExerciseId, clientSetId])
+  @@index([sessionExerciseId, setIndex])
 }
