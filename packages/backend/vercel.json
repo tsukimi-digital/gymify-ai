@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && npm run build -w packages/shared && cd packages/backend && npx prisma generate && npx tsc",
   "builds": [
     {
       "src": "src/vercel.ts",
