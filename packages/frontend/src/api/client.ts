@@ -46,7 +46,6 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       return retry.json();
     }
     setAccessToken(null);
-    window.location.href = '/';
     throw new Error('Unauthorized');
   }
 
