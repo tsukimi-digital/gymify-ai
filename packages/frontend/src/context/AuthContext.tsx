@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setAccessToken } from '../api/client';
+import { setAccessToken, apiFetch } from '../api/client';
 import { getOrCreateFingerprint } from '../lib/fingerprint';
 
 interface AuthState {
@@ -27,22 +27,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAuth = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setAccessToken(data.accessToken);
-        // Decode JWT payload to get user state
-        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-        setState(s => ({
-          ...s,
-          userId: payload.userId,
-          isPremium: payload.isPremium,
-          plansGenerated: payload.plansGenerated,
-          isLoading: false,
-        }));
-      } else {
-        setState(s => ({ ...s, isLoading: false }));
-      }
+      const data = await apiFetch<{ accessToken: string }>('/auth/refresh', { method: 'POST', skipCsrf: true });
+      setAccessToken(data.accessToken);
+      // Decode JWT payload to get user state
+      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+      setState(s => ({
+        ...s,
+        userId: payload.userId,
+        isPremium: payload.isPremium,
+        plansGenerated: payload.plansGenerated,
+        isLoading: false,
+      }));
     } catch {
       setState(s => ({ ...s, isLoading: false }));
     }
@@ -51,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { refreshAuth(); }, [refreshAuth]);
 
   const identify = useCallback(async (email: string) => {
-    const { apiFetch } = await import('../api/client');
     const fp = getOrCreateFingerprint();
     const data = await apiFetch<{
       userId: string;
@@ -74,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch {}
     setAccessToken(null);
     setState({ userId: null, email: null, isPremium: false, plansGenerated: 0, isLoading: false });
   }, []);

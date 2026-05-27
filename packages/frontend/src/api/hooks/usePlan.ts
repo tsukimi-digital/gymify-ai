@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { apiFetch, QuotaExceededError } from '../client';
+import { apiFetch, API_BASE, QuotaExceededError } from '../client';
 
 export function useGeneratePlan() {
   const qc = useQueryClient();
@@ -26,7 +26,7 @@ export function useGenerationProgress(jobId: string | null) {
   useEffect(() => {
     if (!jobId) return;
 
-    const es = new EventSource(`/api/plans/jobs/${jobId}/stream`, { withCredentials: true });
+    const es = new EventSource(`${API_BASE}/plans/jobs/${jobId}/stream`, { withCredentials: true });
 
     es.onmessage = (e) => {
       try {
