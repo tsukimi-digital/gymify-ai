@@ -20,3 +20,6 @@ e2e/test-results/
 
 # TypeScript build
 *.tsbuildinfo
+# Exception: shared package dist must be committed for Vercel deployment
+!packages/shared/dist/
+!packages/shared/dist/**

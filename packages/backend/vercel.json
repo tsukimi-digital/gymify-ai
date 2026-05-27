@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "cd ../.. && npm install",
-  "buildCommand": "bash scripts/vercel-build.sh",
+  "buildCommand": "npx prisma generate",
   "builds": [
     {
       "src": "src/vercel.ts",
