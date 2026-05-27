@@ -1,17 +1,15 @@
 {
   "version": 2,
-  "installCommand": "npm install",
-  "buildCommand": "npm run build -w packages/shared && npm run build -w packages/backend",
-  "outputDirectory": "packages/backend/dist",
-  "functions": {
-    "packages/backend/src/vercel.ts": {
-      "includeFiles": "packages/shared/dist/**"
+  "builds": [
+    {
+      "src": "src/vercel.ts",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "packages/backend/src/vercel.ts"
+      "dest": "src/vercel.ts"
     }
   ]
 }
