@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { apiFetch, API_BASE, QuotaExceededError } from '../client';
+import { apiFetch, QuotaExceededError } from '../client';
 
 export function useGeneratePlan() {
   const qc = useQueryClient();
@@ -26,47 +26,27 @@ export function useGenerationProgress(jobId: string | null) {
   useEffect(() => {
     if (!jobId) return;
 
-    const es = new EventSource(`${API_BASE}/plans/jobs/${jobId}/stream`, { withCredentials: true });
+    let cancelled = false;
+    let polls = 0;
 
-    es.onmessage = (e) => {
+    const interval = setInterval(async () => {
       try {
-        const data = JSON.parse(e.data);
-        if (data.phase) setPhase(data.phase);
-        if (typeof data.progress === 'number') setProgress(data.progress);
-        if (data.status === 'DONE' || data.phase === 'DONE') {
-          setDone(true);
-          es.close();
-        }
-        if (data.status === 'FAILED') {
-          setError(data.errorMessage ?? 'Generation failed');
-          es.close();
-        }
+        const job = await apiFetch<{
+          phase: string;
+          progress: number;
+          status: string;
+          errorMessage?: string;
+        }>(`/plans/jobs/${jobId}`);
+        if (cancelled) return;
+        if (job.phase) setPhase(job.phase as Phase);
+        if (typeof job.progress === 'number') setProgress(job.progress);
+        if (job.status === 'SUCCEEDED') { setDone(true); clearInterval(interval); }
+        if (job.status === 'FAILED') { setError(job.errorMessage ?? 'Failed'); clearInterval(interval); }
+        if (++polls > 120) clearInterval(interval); // max 4 min
       } catch {}
-    };
+    }, 2000);
 
-    es.onerror = () => {
-      // Fallback to polling
-      es.close();
-      let polls = 0;
-      const interval = setInterval(async () => {
-        try {
-          const job = await apiFetch<{
-            phase: string;
-            progress: number;
-            status: string;
-            errorMessage?: string;
-          }>(`/plans/jobs/${jobId}`);
-          if (job.phase) setPhase(job.phase as Phase);
-          if (typeof job.progress === 'number') setProgress(job.progress);
-          if (job.status === 'SUCCEEDED') { setDone(true); clearInterval(interval); }
-          if (job.status === 'FAILED') { setError(job.errorMessage ?? 'Failed'); clearInterval(interval); }
-          if (++polls > 60) clearInterval(interval);
-        } catch {}
-      }, 2000);
-      return () => clearInterval(interval);
-    };
-
-    return () => es.close();
+    return () => { cancelled = true; clearInterval(interval); };
   }, [jobId]);
 
   return { phase, progress, done, error };
