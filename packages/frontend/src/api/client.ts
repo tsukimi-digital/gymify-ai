@@ -1,4 +1,4 @@
-const API_BASE = '/api'; // proxied to localhost:3001 via Vite
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 function getCsrfToken(): string {
   const match = document.cookie.match(/gymify_csrf=([^;]+)/);
