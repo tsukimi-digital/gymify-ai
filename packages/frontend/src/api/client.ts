@@ -42,6 +42,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       setAccessToken(data.accessToken);
       headers['Authorization'] = `Bearer ${data.accessToken}`;
       const retry = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
+      if (retry.status === 402) throw new QuotaExceededError();
       if (!retry.ok) throw new Error(`HTTP ${retry.status}`);
       return retry.json();
     }

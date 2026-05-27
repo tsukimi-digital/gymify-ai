@@ -29,7 +29,7 @@ export function useGenerationProgress(jobId: string | null) {
     let cancelled = false;
     let polls = 0;
 
-    const interval = setInterval(async () => {
+    const poll = async () => {
       try {
         const job = await apiFetch<{
           phase: string;
@@ -40,13 +40,35 @@ export function useGenerationProgress(jobId: string | null) {
         if (cancelled) return;
         if (job.phase) setPhase(job.phase as Phase);
         if (typeof job.progress === 'number') setProgress(job.progress);
-        if (job.status === 'SUCCEEDED') { setDone(true); clearInterval(interval); }
-        if (job.status === 'FAILED') { setError(job.errorMessage ?? 'Failed'); clearInterval(interval); }
-        if (++polls > 120) clearInterval(interval); // max 4 min
+        if (job.status === 'SUCCEEDED') {
+          // Animate through phases before marking done
+          setPhase('DONE');
+          setProgress(100);
+          setTimeout(() => { if (!cancelled) setDone(true); }, 800);
+          return true; // stop polling
+        }
+        if (job.status === 'FAILED') {
+          setError(job.errorMessage ?? 'Failed');
+          return true; // stop polling
+        }
       } catch {}
-    }, 2000);
+      return false;
+    };
 
-    return () => { cancelled = true; clearInterval(interval); };
+    // First poll immediately, then every 2s
+    poll().then(stop => {
+      if (stop) return;
+      const interval = setInterval(async () => {
+        if (++polls > 120) { clearInterval(interval); return; }
+        const stop = await poll();
+        if (stop) clearInterval(interval);
+      }, 2000);
+      // cleanup
+      const origCancel = () => { cancelled = true; clearInterval(interval); };
+      return origCancel;
+    });
+
+    return () => { cancelled = true; };
   }, [jobId]);
 
   return { phase, progress, done, error };
