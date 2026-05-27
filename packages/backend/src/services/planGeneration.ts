@@ -86,56 +86,59 @@ export async function handlePlanGeneration(jobId: string): Promise<void> {
 
   const costUsd = (inputTokens * 0.000003 + outputTokens * 0.000015);
 
-  await prisma.$transaction(async (tx: any) => {
-    await tx.workoutPlan.updateMany({
-      where: { userId, isActive: true },
-      data: { isActive: false },
-    });
+  // Deactivate previous plan
+  await prisma.workoutPlan.updateMany({
+    where: { userId, isActive: true },
+    data: { isActive: false },
+  });
 
-    const plan = await tx.workoutPlan.create({
-      data: {
-        userId,
-        content: planData as any,
-        weeksTotal: planData!.mesocycle.weeks,
-        deloadWeekIndex: planData!.mesocycle.deloadWeekIndex,
-        isActive: true,
-        generationJobId: jobId,
-        modelId: 'claude-sonnet-4-5',
-        promptVersion: '1.0',
-      },
-    });
+  // Create new plan
+  const plan = await prisma.workoutPlan.create({
+    data: {
+      userId,
+      content: planData as any,
+      weeksTotal: planData!.mesocycle.weeks,
+      deloadWeekIndex: planData!.mesocycle.deloadWeekIndex,
+      isActive: true,
+      generationJobId: jobId,
+      modelId: 'claude-sonnet-4-5',
+      promptVersion: '1.0',
+    },
+  });
 
-    for (const week of planData!.mesocycle.schedule) {
-      for (const day of week.days) {
-        await tx.workoutPlanDay.create({
-          data: {
-            planId: plan.id,
-            weekIndex: week.weekIndex,
-            dayIndex: day.dayIndex,
-            focus: day.focus,
-            plannedJson: day as any,
-          },
-        });
-      }
+  // Create plan days
+  for (const week of planData!.mesocycle.schedule) {
+    for (const day of week.days) {
+      await prisma.workoutPlanDay.create({
+        data: {
+          planId: plan.id,
+          weekIndex: week.weekIndex,
+          dayIndex: day.dayIndex,
+          focus: day.focus,
+          plannedJson: day as any,
+        },
+      });
     }
+  }
 
-    await tx.user.update({
-      where: { id: userId },
-      data: { plansGenerated: { increment: 1 } },
-    });
+  // Increment user plansGenerated
+  await prisma.user.update({
+    where: { id: userId },
+    data: { plansGenerated: { increment: 1 } },
+  });
 
-    await tx.planGenerationJob.update({
-      where: { id: jobId },
-      data: {
-        status: 'SUCCEEDED',
-        phase: 'DONE',
-        progress: 100,
-        finishedAt: new Date(),
-        inputTokens,
-        outputTokens,
-        costUsd,
-      },
-    });
+  // Mark job as done
+  await prisma.planGenerationJob.update({
+    where: { id: jobId },
+    data: {
+      status: 'SUCCEEDED',
+      phase: 'DONE',
+      progress: 100,
+      finishedAt: new Date(),
+      inputTokens,
+      outputTokens,
+      costUsd,
+    },
   });
 
   logger.info({ jobId, userId }, 'Plan generation completed successfully');
