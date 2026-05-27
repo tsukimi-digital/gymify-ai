@@ -31,13 +31,16 @@ export function useGenerationProgress(jobId: string | null) {
 
     const poll = async () => {
       try {
-        const job = await apiFetch<{
-          phase: string;
-          progress: number;
-          status: string;
-          errorMessage?: string;
+        const res = await apiFetch<{
+          job: {
+            phase: string;
+            progress: number;
+            status: string;
+            errorMessage?: string;
+          };
         }>(`/plans/jobs/${jobId}`);
-        if (cancelled) return;
+        if (cancelled) return false;
+        const job = res.job;
         if (job.phase) setPhase(job.phase as Phase);
         if (typeof job.progress === 'number') setProgress(job.progress);
         if (job.status === 'SUCCEEDED') {
