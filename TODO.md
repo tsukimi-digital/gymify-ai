@@ -1,6 +1,7 @@
 # Gymify AI — Implementation TODO
 > Orchestrator tracks progress here. ✅ = done, 🔄 = in progress, ❌ = not started
 
+
 ## ACCEPTANCE CRITERIA
 - [x] Working app deployable based on design spec
 - [x] Matches UI design (compared browser with mockups)
