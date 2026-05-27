@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setAccessToken, apiFetch } from '../api/client';
+import { setAccessToken, apiFetch, API_BASE } from '../api/client';
 import { getOrCreateFingerprint } from '../lib/fingerprint';
 
 interface AuthState {
@@ -27,17 +27,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAuth = useCallback(async () => {
     try {
-      const data = await apiFetch<{ accessToken: string }>('/auth/refresh', { method: 'POST', skipCsrf: true });
-      setAccessToken(data.accessToken);
-      // Decode JWT payload to get user state
-      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-      setState(s => ({
-        ...s,
-        userId: payload.userId,
-        isPremium: payload.isPremium,
-        plansGenerated: payload.plansGenerated,
-        isLoading: false,
-      }));
+      const res = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setAccessToken(data.accessToken);
+        // Decode JWT payload to get user state
+        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+        setState(s => ({
+          ...s,
+          userId: payload.userId,
+          isPremium: payload.isPremium,
+          plansGenerated: payload.plansGenerated,
+          isLoading: false,
+        }));
+      } else {
+        setState(s => ({ ...s, isLoading: false }));
+      }
     } catch {
       setState(s => ({ ...s, isLoading: false }));
     }
