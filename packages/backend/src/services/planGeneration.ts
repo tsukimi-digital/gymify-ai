@@ -1,4 +1,4 @@
-import { prisma } from '../db.js';
+import { prisma, withRetry } from '../db.js';
 import { logger } from '../logger.js';
 import { buildAnthropicMessages } from './promptBuilder.js';
 import { callClaude } from './claude.js';
@@ -16,7 +16,7 @@ export async function handlePlanGeneration(jobId: string): Promise<void> {
   const job = await prisma.planGenerationJob.findUniqueOrThrow({ where: { id: jobId } });
   const userId = job.userId;
 
-  const [profile, equipment, injuries, benchmarks, exercises] = await Promise.all([
+  const [profile, equipment, injuries, benchmarks, exercises] = await withRetry(() => Promise.all([
     prisma.userProfile.findUnique({ where: { userId } }),
     (prisma as any).equipmentAvailability.findMany({ where: { userId } }),
     (prisma as any).injury.findMany({ where: { userId } }),
@@ -25,7 +25,7 @@ export async function handlePlanGeneration(jobId: string): Promise<void> {
       include: { exercise: { select: { slug: true, name: true } } },
     }),
     prisma.exercise.findMany(),
-  ]);
+  ]));
 
   if (!profile) {
     throw new Error('User profile not found — cannot generate plan');
