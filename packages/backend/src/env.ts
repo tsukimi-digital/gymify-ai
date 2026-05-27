@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT: z.string().default('3001').transform(Number),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  ANTHROPIC_API_KEY: z.string().optional(),
   MOCK_ANTHROPIC: z.string().transform(v => v === 'true').default('false'),
 });
 

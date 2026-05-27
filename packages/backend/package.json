@@ -19,6 +19,7 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.23.0",
     "@gymify/shared": "*",
     "@prisma/client": "^5.15.0",
     "cookie-parser": "^1.4.6",

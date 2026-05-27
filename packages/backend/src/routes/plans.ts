@@ -6,6 +6,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { checkQuota } from '../services/quota.js';
 import { initSSE, sendSSEEvent, sendSSEPing } from '../services/sse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { handlePlanGeneration } from '../services/planGeneration.js';
 
 const router = Router();
 
@@ -25,6 +26,14 @@ router.post('/generate', requireAuth, asyncHandler(async (req: Request, res: Res
   });
 
   res.json({ jobId: job.id });
+
+  // Fire-and-forget: process the job in the background
+  handlePlanGeneration(job.id).catch(async (err: unknown) => {
+    await prisma.planGenerationJob.update({
+      where: { id: job.id },
+      data: { status: 'FAILED', errorMessage: String(err), finishedAt: new Date() },
+    }).catch(() => {});
+  });
 }));
 
 // GET /api/plans/jobs/:jobId

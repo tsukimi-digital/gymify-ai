@@ -5,7 +5,8 @@
       "src": "packages/backend/src/vercel.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["packages/shared/dist/**"]
+        "includeFiles": ["packages/shared/dist/**"],
+        "maxDuration": 300
       }
     }
   ],
